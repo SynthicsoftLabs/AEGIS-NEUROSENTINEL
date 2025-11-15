@@ -1,0 +1,21 @@
+# agent/config.yaml
+agent:
+  name: "AEGIS::NeuroSentinel"
+  vendor: "SynthicSoft Labs"
+  version: "0.1.0"
+  poll_interval_seconds: 10
+  min_severity_to_log: "info"   # info, low, medium, high, critical
+
+output:
+  events_file: "outputs/events.ndjson"
+
+limits:
+  max_events_file_mb: 25        # simple log rotation threshold
+
+scoring:
+  # Thresholds for score → severity mapping
+  thresholds:
+    critical: 0.85
+    high: 0.70
+    medium: 0.50
+    low: 0.30
