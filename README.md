@@ -2,12 +2,16 @@
 ### SynthicSoft Labs – Autonomous Neural SOC Agent / Sentinel / Behavioral Watchdog  
 **Part of the Suntincerl Security Suite**
 
+![AEGIS DASHBOARD](assets/AEGIS-NEUROSENTINEL-Screenshot-Dashboard-1.png)
+
 ## 📡 Overview
 **AEGIS::NeuroSentinel** is a cross-platform, neural-powered cybersecurity sentinel that monitors host behavior, generates high-value security telemetry, and emits structured anomaly events for SIEMs, dashboards, and automations.
 
 It is fully local-first, autonomous, and self-contained, requiring zero cloud dependencies.
 
 Designed with the SynthicSoft Cyber Command Interface aesthetic, NeuroSentinel is engineered for real-world SOC operations, behavioral analysis, and threat hunting.
+
+![AEGIS DASHBOARD](AEGIS_NEUROSENTINEL.png)
 
 ## 🎯 Key Capabilities
 ### 🔍 Behavioral Telemetry Collection
@@ -39,6 +43,8 @@ FastAPI microservice exposes:
 
 ### 🖥 SynthicSoft Cyber Command Dashboard
 Includes threat gauge, telemetry graphs, event stream, process intelligence, network snapshot, environment panel.
+
+![AEGIS DASHBOARD](AEGIS_NEUROSENTINEL.png)
 
 ## 📂 Repository Structure
 ```
@@ -108,6 +114,8 @@ Each event is JSON on a new line:
 - Process Intelligence  
 - Network Snapshot  
 - Environment Panel  
+
+![AEGIS DASHBOARD](AEGIS_NEUROSENTINEL.png)
 
 ## 🎨 Brand Identity
 - SynthicSoft Cyan: #19E3C8  
