@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SynthicSoft // AEGIS::NeuroSentinel Command Console</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    :root {
+      --bg: #0F172A;
+      --bg-deep: #020617;
+      --panel: #1E293B;
+      --panel-soft: #162032;
+      --accent: #19E3C8;
+      --accent-soft: #0EA5E9;
+      --text: #E5E7EB;
+      --muted: #64748B;
+      --crit: #DC2626;
+      --high: #EA580C;
+      --med: #F59E0B;
+      --low: #3B82F6;
+    }
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at top, var(--bg-deep) 0, #000 70%);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    header {
+      padding: 22px 28px;
+      border-bottom: 1px solid #020617;
+      background: linear-gradient(135deg, #020617, #0F172A 40%, #047857 100%);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: 0.1em;
+    }
+
+    /* Layout Grid */
+    main {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 20px 24px 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "score telemetry"
+        "events processes"
+        "network environment";
+      grid-gap: 28px;
+    }
+
+    @media (max-width: 1100px) {
+      main {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "score"
+          "telemetry"
+          "events"
+          "processes"
+          "network"
+          "environment";
+      }
+    }
+
+    .panel {
+      background: radial-gradient(circle at top left, rgba(25,227,200,0.13), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(37,99,235,0.10), transparent 55%),
+                  var(--panel);
+      border-radius: 18px;
+      border: 1px solid #111827;
+      padding: 20px;
+      min-height: 220px;
+      box-shadow: 0 20px 45px rgba(15,23,42,0.9);
+    }
+
+    .panel h2 {
+      margin: 0 0 2px;
+      font-size: 14px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .panel small {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    /* -------------------------------
+       THREAT GAUGE PANEL
+    --------------------------------*/
+    #gaugeCanvas {
+      width: 100%;
+      height: 180px;
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* -------------------------------
+       TELEMETRY GRAPHS
+    --------------------------------*/
+    .telemetry-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-gap: 12px;
+    }
+
+    .telemetry-graph-box {
+      height: 120px;
+      background: var(--panel-soft);
+      border-radius: 12px;
+      border: 1px solid #0f1a2c;
+      position: relative;
+    }
+
+    canvas.telemetry-graph {
+      width: 100%;
+      height: 100%;
+    }
+
+    .kpi-bar {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .kpi {
+      flex: 1 1 100px;
+      background: rgba(15,23,42,0.9);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 11px;
+      border: 1px solid #1F2937;
+    }
+
+    .kpi label {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      margin-bottom: 2px;
+    }
+
+    .kpi span {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* ---------------------------------
+       EVENT STREAM TABLE
+    ----------------------------------*/
+    .event-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .event-controls input,
+    .event-controls select,
+    .event-controls button {
+      background: var(--panel-soft);
+      color: var(--text);
+      border: 1px solid #0f1a2c;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .event-table {
+      max-height: 400px;
+      overflow-y: auto;
+      border-top: 1px solid #1f2a3b;
+      padding-top: 8px;
+    }
+
+    .event-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 150px;
+      padding: 8px 4px;
+      border-bottom: 1px solid rgba(15,23,42,0.7);
+      font-size: 12px;
+    }
+
+    .sev-badge {
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      text-align: center;
+      width: 80px;
+    }
+
+    .sev-critical { background: rgba(220,38,38,0.15); color: var(--crit); }
+    .sev-high     { background: rgba(234,88,12,0.15); color: var(--high); }
+    .sev-medium   { background: rgba(245,158,11,0.15); color: var(--med); }
+    .sev-low      { background: rgba(59,130,246,0.15); color: var(--low); }
+    .sev-info     { background: rgba(25,227,200,0.12); color: var(--accent); }
+
+    /* ---------------------------------
+       PROCESS INTELLIGENCE PANEL
+    ----------------------------------*/
+    .process-table {
+      max-height: 350px;
+      overflow-y: auto;
+      border-top: 1px solid #1f2a3b;
+      padding-top: 8px;
+    }
+
+    .process-row {
+      display: grid;
+      grid-template-columns: 1fr 60px 60px;
+      padding: 6px 4px;
+      border-bottom: 1px solid rgba(15,23,42,0.7);
+      font-size: 12px;
+    }
+
+    .process-risk-bar {
+      height: 6px;
+      width: 100%;
+      border-radius: 4px;
+      background: rgba(15,23,42,0.9);
+      margin-top: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+    .process-risk-fill {
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%;
+      border-radius: 4px;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.4s ease-out;
+    }
+
+    /* ---------------------------------
+       NETWORK PANEL
+    ----------------------------------*/
+    .network-table {
+      max-height: 300px;
+      overflow-y: auto;
+      border-top: 1px solid #1f2a3b;
+      padding-top: 8px;
+      font-size: 12px;
+    }
+
+    .network-row {
+      display: grid;
+      grid-template-columns: 150px 1fr 60px;
+      padding: 6px 4px;
+      border-bottom: 1px solid rgba(15,23,42,0.7);
+    }
+
+    .net-state {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    /* ---------------------------------
+       ENVIRONMENT PANEL
+    ----------------------------------*/
+    .env-table {
+      font-size: 13px;
+      padding-top: 4px;
+    }
+
+    .env-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(15,23,42,0.6);
+    }
+
+    .env-label {
+      color: var(--muted);
+    }
+
+    /* ---------------------------------
+       SCROLLBAR STYLING
+    ----------------------------------*/
+    ::-webkit-scrollbar {
+      width: 9px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1b2d41;
+      border-radius: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b1421;
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>SYNTHICSOFT // AEGIS::NEUROSENTINEL</h1>
+  <div class="subtitle">Autonomous Behavioral Defense Node · Neural Sentinel · SOC-Ready</div>
+</header>
+
+<main>
+
+  <!-- ============================================================
+       THREAT GAUGE PANEL
+  ============================================================ -->
+  <section class="panel" style="grid-area: score">
+    <h2>Threat Level</h2>
+    <small>Anomaly score from latest snapshot.</small>
+    <canvas id="gaugeCanvas"></canvas>
+  </section>
+
+  <!-- ============================================================
+       TELEMETRY PANEL (Graphs + KPIs)
+  ============================================================ -->
+  <section class="panel" style="grid-area: telemetry">
+    <h2>Host Telemetry</h2>
+    <small>Rolling behavior signals (last 60s).</small>
+
+    <div class="telemetry-container">
+      <div class="telemetry-graph-box">
+        <canvas id="cpuGraph" class="telemetry-graph"></canvas>
+      </div>
+      <div class="telemetry-graph-box">
+        <canvas id="ramGraph" class="telemetry-graph"></canvas>
+      </div>
+    </div>
+
+    <div class="kpi-bar">
+      <div class="kpi"><label>CPU</label><span id="kpi-cpu">–</span></div>
+      <div class="kpi"><label>RAM</label><span id="kpi-ram">–</span></div>
+      <div class="kpi"><label>Processes</label><span id="kpi-proc">–</span></div>
+      <div class="kpi"><label>Connections</label><span id="kpi-net">–</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       EVENT STREAM PANEL
+  ============================================================ -->
+  <section class="panel" style="grid-area: events">
+    <h2>Event Stream</h2>
+    <small>Live anomalies from NeuroSentinel.</small>
+
+    <div class="event-controls">
+      <input type="text" id="eventSearch" placeholder="Search…" />
+      <select id="sevFilter">
+        <option value="all">All Severities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+        <option value="info">Info</option>
+      </select>
+      <button id="toggleAuto">Pause Auto-Refresh</button>
+    </div>
+
+    <div class="status" id="eventStatus" style="margin-bottom: 10px;"></div>
+
+    <div class="event-table" id="eventTable"></div>
+  </section>
+
+  <!-- ============================================================
+       PROCESS INTELLIGENCE PANEL
+  ============================================================ -->
+  <section class="panel" style="grid-area: processes">
+    <h2>Process Intelligence</h2>
+    <small>Top processes (sorted by name).</small>
+
+    <div class="process-table" id="processTable"></div>
+  </section>
+
+  <!-- ============================================================
+       NETWORK SNAPSHOT PANEL
+  ============================================================ -->
+  <section class="panel" style="grid-area: network">
+    <h2>Network Snapshot</h2>
+    <small>Remote IPs, states, and port activity.</small>
+
+    <div class="network-table" id="networkTable"></div>
+
+    <div style="margin-top: 18px;">
+      <h3 style="color: var(--accent); font-size: 13px; margin: 0 0 4px;">Port Distribution</h3>
+      <canvas id="portGraph" class="telemetry-graph" style="height:140px;"></canvas>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ENVIRONMENT INFORMATION PANEL
+  ============================================================ -->
+  <section class="panel" style="grid-area: environment">
+    <h2>Environment Info</h2>
+    <small>Agent, OS, platform, and uptime.</small>
+
+    <div class="env-table" id="envTable"></div>
+  </section>
+
+</main>
+
+<!-- PART 3 WILL INCLUDE FULL JAVASCRIPT LOGIC -->
+<script>
+
+  // ==========================
+  // Utility helpers
+  // ==========================
+  function severityClass(sev) {
+    switch (sev) {
+      case "critical": return "sev-critical";
+      case "high": return "sev-high";
+      case "medium": return "sev-medium";
+      case "low": return "sev-low";
+      default: return "sev-info";
+    }
+  }
+
+  function safeNumber(x, fallback = 0) {
+    const n = Number(x);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  // ==========================
+  // Data buffers for graphs
+  // ==========================
+  const graphBufferSize = 60;
+  const cpuHistory = [];
+  const ramHistory = [];
+  const scoreHistory = [];
+
+  let latestSnapshot = null;
+  let latestEvent = null;
+
+  // ==========================
+  // Canvas graph helper
+  // ==========================
+  function drawLineGraph(canvas, data, color) {
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width = canvas.clientWidth;
+    const h = canvas.height = canvas.clientHeight;
+
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.fillStyle = "rgba(15,23,42,0.9)";
+    ctx.fillRect(0, 0, w, h);
+
+    if (!data.length) return;
+
+    const maxVal = Math.max(...data, 1);
+    const minVal = Math.min(...data, 0);
+
+    ctx.strokeStyle = "rgba(31,41,55,0.9)";
+    ctx.lineWidth = 1;
+    for (let i = 1; i <= 3; i++) {
+      const y = (h / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+
+    data.forEach((val, idx) => {
+      const x = (idx / Math.max(data.length - 1, 1)) * (w - 10) + 5;
+      const norm = (val - minVal) / Math.max(maxVal - minVal, 1);
+      const y = h - (norm * (h - 10) + 5);
+      if (idx === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+
+    ctx.stroke();
+  }
+
+  // ==========================
+  // Threat Gauge
+  // ==========================
+  function drawGauge(score) {
+    const canvas = document.getElementById("gaugeCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const w = canvas.width = canvas.clientWidth;
+    const h = canvas.height = canvas.clientHeight;
+    const cx = w / 2;
+    const cy = h * 0.85;
+    const radius = Math.min(w, h * 1.7) / 2.2;
+
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.fillStyle = "rgba(2,6,23,0.9)";
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    const startAngle = Math.PI;
+    const endAngle = 0;
+
+    const grd = ctx.createRadialGradient(0, 0, radius * 0.1, 0, 0, radius * 1.1);
+    grd.addColorStop(0, "rgba(15,23,42,1)");
+    grd.addColorStop(1, "rgba(15,23,42,0.2)");
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 1.1, startAngle, endAngle, false);
+    ctx.fill();
+
+    const segments = [
+      { max: 0.3, color: "#19E3C8" },
+      { max: 0.5, color: "#3B82F6" },
+      { max: 0.7, color: "#F59E0B" },
+      { max: 0.85, color: "#EA580C" },
+      { max: 1.0, color: "#DC2626" }
+    ];
+
+    let prev = 0;
+    segments.forEach(seg => {
+      const segStart = startAngle + prev * Math.PI;
+      const segEnd = startAngle + seg.max * Math.PI;
+      ctx.beginPath();
+      ctx.strokeStyle = seg.color;
+      ctx.lineWidth = radius * 0.14;
+      ctx.arc(0, 0, radius, segStart, segEnd, false);
+      ctx.stroke();
+      prev = seg.max;
+    });
+
+    const clamped = Math.max(0, Math.min(1, score));
+    const angle = startAngle + clamped * Math.PI;
+
+    ctx.strokeStyle = "rgba(15,23,42,1)";
+    ctx.lineWidth = radius * 0.16;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, angle + 0.04, endAngle + 0.02, false);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, startAngle - 0.02, angle - 0.04, false);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.rotate(angle);
+    ctx.strokeStyle = "#19E3C8";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(radius * 0.9, 0);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = "#19E3C8";
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.08, 0, Math.PI * 2, false);
+    ctx.fill();
+
+    ctx.fillStyle = "#E5E7EB";
+    ctx.font = "12px system-ui";
+    ctx.textAlign = "center";
+
+    ctx.fillText("ANOMALY SCORE", 0, -radius * 0.35);
+    ctx.font = "26px system-ui";
+    ctx.fillText(score.toFixed(3), 0, -radius * 0.1);
+
+    let sevLabel = "INFO";
+    if (score >= 0.85) sevLabel = "CRITICAL";
+    else if (score >= 0.7) sevLabel = "HIGH";
+    else if (score >= 0.5) sevLabel = "MEDIUM";
+    else if (score >= 0.3) sevLabel = "LOW";
+
+    ctx.font = "11px system-ui";
+    ctx.fillStyle = "#9CA3AF";
+    ctx.fillText(sevLabel, 0, radius * 0.1);
+
+    ctx.restore();
+  }
+
+  // ==========================
+  // Render functions
+  // ==========================
+  function renderKPIs(snapshot) {
+    if (!snapshot) return;
+    document.getElementById("kpi-cpu").textContent =
+      (snapshot.cpu_percent ?? "–") + "%";
+    document.getElementById("kpi-ram").textContent =
+      (snapshot.ram_percent ?? "–") + "%";
+    document.getElementById("kpi-proc").textContent =
+      snapshot.process_count ?? "–";
+    document.getElementById("kpi-net").textContent =
+      snapshot.net_connection_count ?? "–";
+  }
+
+  function renderEvents(events) {
+    const container = document.getElementById("eventTable");
+    container.innerHTML = "";
+
+    const search = (document.getElementById("eventSearch").value || "").trim().toLowerCase();
+    const sevFilter = document.getElementById("sevFilter").value;
+
+    const statusEl = document.getElementById("eventStatus");
+    statusEl.textContent = `Events loaded: ${events.length}`;
+
+    events
+      .filter(ev => {
+        if (!ev || !ev.classification) return false;
+        const sev = (ev.classification.severity || "info").toLowerCase();
+        if (sevFilter !== "all" && sev !== sevFilter) return false;
+
+        if (!search) return true;
+        const haystack = JSON.stringify(ev).toLowerCase();
+        return haystack.includes(search);
+      })
+      .slice()
+      .reverse()
+      .forEach(ev => {
+        const row = document.createElement("div");
+        row.className = "event-row";
+
+        const sev = (ev.classification.severity || "info").toLowerCase();
+        const score = ev.classification.score ?? 0;
+        const snap = ev.snapshot || {};
+
+        const sevCell = document.createElement("div");
+        const sevBadge = document.createElement("div");
+        sevBadge.className = "sev-badge " + severityClass(sev);
+        sevBadge.textContent = sev.toUpperCase();
+        sevCell.appendChild(sevBadge);
+
+        const mid = document.createElement("div");
+        mid.textContent = `score=${score}  cpu=${snap.cpu_percent}%  ram=${snap.ram_percent}%  procs=${snap.process_count}`;
+
+        const tsCell = document.createElement("div");
+        tsCell.style.textAlign = "right";
+        tsCell.style.fontSize = "11px";
+        tsCell.style.color = "#64748B";
+        const ts = ev.timestamp ? new Date(ev.timestamp).toLocaleString() : "–";
+        tsCell.textContent = ts;
+
+        row.appendChild(sevCell);
+        row.appendChild(mid);
+        row.appendChild(tsCell);
+
+        container.appendChild(row);
+      });
+  }
+
+  function renderProcesses(snapshot) {
+    const container = document.getElementById("processTable");
+    container.innerHTML = "";
+
+    const processes = snapshot?.top_processes || [];
+    if (!processes.length) {
+      container.textContent = "No process data in snapshot.";
+      return;
+    }
+
+    const counts = processes.reduce((acc, name) => {
+      acc[name] = (acc[name] || 0) + 1;
+      return acc;
+    }, {});
+    const entries = Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0])).slice(0, 15);
+
+    entries.forEach(([name, freq]) => {
+      const row = document.createElement("div");
+      row.className = "process-row";
+
+      const nameCell = document.createElement("div");
+      nameCell.textContent = name || "<unknown>";
+
+      const freqCell = document.createElement("div");
+      freqCell.style.textAlign = "right";
+      freqCell.textContent = "x" + freq;
+
+      const riskCell = document.createElement("div");
+      const bar = document.createElement("div");
+      bar.className = "process-risk-bar";
+      const fill = document.createElement("div");
+      fill.className = "process-risk-fill";
+
+      const pseudoRisk = Math.min(freq * 10, 100);
+      fill.style.width = pseudoRisk + "%";
+      if (pseudoRisk > 75) fill.style.background = "#DC2626";
+      else if (pseudoRisk > 50) fill.style.background = "#EA580C";
+      else if (pseudoRisk > 25) fill.style.background = "#F59E0B";
+      else fill.style.background = "#19E3C8";
+
+      bar.appendChild(fill);
+      riskCell.appendChild(bar);
+
+      row.appendChild(nameCell);
+      row.appendChild(freqCell);
+      row.appendChild(riskCell);
+
+      container.appendChild(row);
+    });
+  }
+
+  function renderNetwork(events) {
+    const container = document.getElementById("networkTable");
+    container.innerHTML = "";
+
+    const last = events[events.length - 1];
+    const snap = last?.snapshot || null;
+    // For now, network is approximate: we only have net_connection_count.
+    // This panel can be extended once agent includes richer net details.
+    if (!snap) {
+      container.textContent = "No network snapshot available.";
+      return;
+    }
+
+    const row = document.createElement("div");
+    row.className = "network-row";
+
+    const ipCell = document.createElement("div");
+    ipCell.textContent = "Aggregate";
+
+    const metaCell = document.createElement("div");
+    metaCell.innerHTML = `
+      <div class="net-state">Estimated connections: ${snap.net_connection_count}</div>
+      <div style="font-size: 11px; color: var(--muted);">
+        Detailed per-IP mapping requires extended agent net telemetry.
+      </div>
+    `;
+
+    const sevCell = document.createElement("div");
+    sevCell.style.textAlign = "right";
+    sevCell.style.fontSize = "11px";
+    sevCell.style.color = "#64748B";
+    sevCell.textContent = "–";
+
+    row.appendChild(ipCell);
+    row.appendChild(metaCell);
+    row.appendChild(sevCell);
+    container.appendChild(row);
+
+    const portCanvas = document.getElementById("portGraph");
+    const ctx = portCanvas.getContext("2d");
+    const w = portCanvas.width = portCanvas.clientWidth;
+    const h = portCanvas.height = portCanvas.clientHeight;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "rgba(15,23,42,0.9)";
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.fillStyle = "#64748B";
+    ctx.font = "11px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("Port histogram requires richer telemetry (future extension).", w / 2, h / 2);
+  }
+
+  function renderEnv(events) {
+    const container = document.getElementById("envTable");
+    container.innerHTML = "";
+
+    const last = events[events.length - 1];
+    if (!last) {
+      container.textContent = "Waiting for events…";
+      return;
+    }
+
+    const agent = last.agent || {};
+    const rows = [
+      ["Agent Name", agent.name || "AEGIS::NeuroSentinel"],
+      ["Vendor", agent.vendor || "SynthicSoft Labs"],
+      ["Version", agent.version || "unknown"],
+      ["Host ID", agent.host_id || "unknown"],
+      ["Platform", agent.platform || "unknown"],
+      ["Last Event", last.timestamp ? new Date(last.timestamp).toLocaleString() : "–"],
+    ];
+
+    rows.forEach(([label, value]) => {
+      const row = document.createElement("div");
+      row.className = "env-row";
+
+      const l = document.createElement("div");
+      l.className = "env-label";
+      l.textContent = label;
+
+      const v = document.createElement("div");
+      v.textContent = value;
+
+      row.appendChild(l);
+      row.appendChild(v);
+      container.appendChild(row);
+    });
+  }
+
+  // ==========================
+  // Fetch & update loop
+  // ==========================
+  let autoRefresh = true;
+  let lastEvents = [];
+
+  async function loadEvents() {
+    const statusEl = document.getElementById("eventStatus");
+    try {
+      const res = await fetch("http://localhost:8080/api/events/latest?limit=120");
+      const data = await res.json();
+      const events = Array.isArray(data.events) ? data.events : [];
+      lastEvents = events;
+
+      if (events.length) {
+        latestEvent = events[events.length - 1];
+        latestSnapshot = latestEvent.snapshot || null;
+
+        const score = safeNumber(latestEvent.classification?.score ?? 0);
+        scoreHistory.push(score);
+        if (scoreHistory.length > graphBufferSize) scoreHistory.shift();
+
+        const cpu = safeNumber(latestSnapshot?.cpu_percent ?? 0);
+        const ram = safeNumber(latestSnapshot?.ram_percent ?? 0);
+        cpuHistory.push(cpu);
+        ramHistory.push(ram);
+        if (cpuHistory.length > graphBufferSize) cpuHistory.shift();
+        if (ramHistory.length > graphBufferSize) ramHistory.shift();
+
+        drawGauge(score);
+        renderKPIs(latestSnapshot);
+        drawLineGraph(document.getElementById("cpuGraph"), cpuHistory, "#19E3C8");
+        drawLineGraph(document.getElementById("ramGraph"), ramHistory, "#3B82F6");
+        renderEvents(events);
+        renderProcesses(latestSnapshot);
+        renderNetwork(events);
+        renderEnv(events);
+      } else {
+        statusEl.textContent = "No events returned.";
+      }
+
+    } catch (err) {
+      statusEl.textContent = "Error fetching events: " + err;
+    }
+  }
+
+  // ==========================
+  // Auto-refresh controls
+  // ==========================
+  const toggleBtn = document.getElementById("toggleAuto");
+  toggleBtn.addEventListener("click", () => {
+    autoRefresh = !autoRefresh;
+    toggleBtn.textContent = autoRefresh ? "Pause Auto-Refresh" : "Resume Auto-Refresh";
+  });
+
+  document.getElementById("eventSearch").addEventListener("input", () => {
+    if (lastEvents.length) renderEvents(lastEvents);
+  });
+  document.getElementById("sevFilter").addEventListener("change", () => {
+    if (lastEvents.length) renderEvents(lastEvents);
+  });
+
+  loadEvents();
+  setInterval(() => {
+    if (autoRefresh) loadEvents();
+  }, 7000);
+</script>
+</body>
+</html>
