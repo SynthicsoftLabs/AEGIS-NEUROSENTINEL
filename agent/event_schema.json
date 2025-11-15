@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AEGIS::NeuroSentinel Event",
+  "type": "object",
+  "properties": {
+    "event_id": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "agent": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "vendor": { "type": "string" },
+        "version": { "type": "string" },
+        "host_id": { "type": "string" },
+        "platform": { "type": "string" }
+      },
+      "required": ["name", "vendor", "version", "host_id", "platform"]
+    },
+    "classification": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "severity": { "type": "string" },
+        "score": { "type": "number" }
+      },
+      "required": ["type", "severity", "score"]
+    },
+    "snapshot": {
+      "type": "object",
+      "properties": {
+        "cpu_percent": { "type": "number" },
+        "ram_percent": { "type": "number" },
+        "process_count": { "type": "integer" },
+        "net_connection_count": { "type": "integer" },
+        "top_processes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": [
+        "cpu_percent",
+        "ram_percent",
+        "process_count",
+        "net_connection_count"
+      ]
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["event_id", "timestamp", "agent", "classification", "snapshot"]
+}
