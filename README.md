@@ -11,7 +11,7 @@ It is fully local-first, autonomous, and self-contained, requiring zero cloud de
 
 Designed with the SynthicSoft Cyber Command Interface aesthetic, NeuroSentinel is engineered for real-world SOC operations, behavioral analysis, and threat hunting.
 
-![AEGIS DASHBOARD](AEGIS_NEUROSENTINEL.png)
+![AEGIS DASHBOARD](assets/AEGIS_NEUROSENTINEL-Screenshot-2-EventStream.png)
 
 ## 🎯 Key Capabilities
 ### 🔍 Behavioral Telemetry Collection
@@ -44,7 +44,7 @@ FastAPI microservice exposes:
 ### 🖥 SynthicSoft Cyber Command Dashboard
 Includes threat gauge, telemetry graphs, event stream, process intelligence, network snapshot, environment panel.
 
-![AEGIS DASHBOARD](AEGIS_NEUROSENTINEL.png)
+![AEGIS DASHBOARD](assets/AEGIS_NEUROSENTINEL-Screenshot3-Process-Intel.png)
 
 ## 📂 Repository Structure
 ```
@@ -115,7 +115,7 @@ Each event is JSON on a new line:
 - Network Snapshot  
 - Environment Panel  
 
-![AEGIS DASHBOARD](AEGIS_NEUROSENTINEL.png)
+![AEGIS DASHBOARD](assets/AEGIS_NEUROSENTINEL-Screenshot-4-RestOfDashboard.png)
 
 ## 🎨 Brand Identity
 - SynthicSoft Cyan: #19E3C8  
